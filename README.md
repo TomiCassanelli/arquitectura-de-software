@@ -2,7 +2,7 @@
 
 Repositorio de la materia Arquitectura de Software de la carrera de Ingeniería en Informática de la UCC.
 
-Este espacio se utiliza para organizar el material de clase y los trabajos prácticos asociados. La idea es trabajar con una rama por clase, donde cada branch contiene el contenido visto en el aula junto con el TP correspondiente.
+Este espacio se utiliza para organizar el material de clase y los trabajos prácticos asociados. La idea es trabajar con una subcarpeta por clase, donde cada una contiene el contenido visto en el aula junto con la demo y/o TP correspondiente.
 
 ## Organización del repositorio
 
