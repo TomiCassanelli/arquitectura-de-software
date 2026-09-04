@@ -1,18 +1,19 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"log"
-	"time"
-
-	"rabbitmq-demo/shared"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const amqpURI = "amqp://user:pass@localhost:5672"
+const queueName = "demo.pedidos"
+
 func main() {
-	conn, err := shared.Connect(shared.AMQPURI)
+	log.Println("[DEMO 2] Objetivo: ver qué sucede cuando un consumidor rechaza un mensaje.")
+	log.Println("[INICIO] El consumidor debe estar ejecutándose: él crea la cola principal y la DLQ.")
+
+	conn, err := amqp.Dial(amqpURI)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,28 +24,13 @@ func main() {
 		log.Fatal(err)
 	}
 	defer ch.Close()
-	q, err := shared.DeclareQueues(ch)
-	if err != nil {
-		log.Fatal(err)
+	// El consumidor crea las colas. Por eso debe iniciarse primero.
+	for _, body := range []string{"pedido-1", "ERROR", "pedido-2"} {
+		log.Printf("[PUBLICANDO] Envío %q a %q...", body, queueName)
+		if err := ch.Publish("", queueName, false, false, amqp.Publishing{Body: []byte(body)}); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("[ENVIADO] %q fue entregado a RabbitMQ.", body)
 	}
-
-	// Se envía un mensaje correcto para mostrar el flujo normal.
-	pedido := shared.Pedido{PedidoID: "PED-1", Monto: 150.50, Cliente: "C-123"}
-	body, err := json.Marshal(pedido)
-	if err != nil {
-		log.Fatal(err)
-	}
-	publish(ch, q.Name, body)
-
-	// Se envía un mensaje incorrecto para probar la DLQ.
-	publish(ch, q.Name, []byte("esto no es JSON"))
-}
-
-func publish(ch *amqp.Channel, queueName string, body []byte) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := ch.PublishWithContext(ctx, "", queueName, false, false, amqp.Publishing{ContentType: "application/json", Body: body}); err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("[Productor] Publicado: %s", body)
+	log.Println("[LISTO] Mirá la otra terminal: pedido-1 y pedido-2 reciben ACK; ERROR va a la DLQ.")
 }
