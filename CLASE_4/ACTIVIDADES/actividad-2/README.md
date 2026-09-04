@@ -1,23 +1,33 @@
-# Actividad 2: Fanout Exchange
+# Actividad 2: pedido confirmado para dos áreas
 
 ## Objetivo
 
-Enviar un mismo pedido a dos sistemas: facturación y logística.
+Cuando una tienda confirma un pedido, deben enterarse al mismo tiempo dos áreas independientes:
+
+- **Facturación:** genera la factura.
+- **Logística:** prepara el envío.
+
+El objetivo es que ambas reciban una copia del mismo evento, sin compartir una sola cola.
+
+```text
+tienda -> exchange fanout -> q.facturas  -> facturación
+                         -> q.logistica  -> logística
+```
 
 ## Consigna
 
-Completá los `TODO` para:
+Los programas ya crean el exchange y las dos colas. Solo falta el vínculo que permite recibir el evento.
 
-1. Declarar un exchange de tipo `fanout`.
-2. Crear una cola para facturación y otra para logística.
-3. Vincular ambas colas al exchange.
-4. Publicar los pedidos en el exchange.
+1. En `facturacion/main.go`, completá el `TODO` con `QueueBind`.
+2. Ejecutá el productor: solo facturación debe recibir el pedido.
+3. En `logistica/main.go`, repetí el vínculo para su cola.
+4. Ejecutá nuevamente el productor: ahora ambos sistemas deben recibir una copia.
 
 ## Pistas
 
-- Cada consumidor debe tener su propia cola.
-- Usá `ExchangeDeclare`, `QueueDeclare` y `QueueBind`.
-- En un exchange `fanout`, la routing key no define el destino.
+- `QueueBind` conecta una cola con un exchange.
+- En un exchange `fanout`, la routing key puede ser `""`.
+- No copies `q.facturas` en logística: cada área usa su propia cola.
 
 ## Ejecutar
 
@@ -41,4 +51,6 @@ Terminal 3:
 go run ./productor
 ```
 
-Ejecutá cada comando en una terminal diferente y verificá que el mismo mensaje aparezca en facturación y logística.
+Primero iniciá ambos consumidores. Sin completar los TODO, el productor no genera mensajes en sus colas: no hay vínculos todavía.
+
+Cada vez que completes un TODO, detené y volvé a iniciar ese consumidor para ejecutar el código nuevo. Después ejecutá otra vez el productor y observá qué área recibe el evento.

@@ -1,6 +1,6 @@
-# Clase 4: RabbitMQ
+# Clase 4: asincronismo con RabbitMQ
 
-La clase avanza de lo más simple a lo más completo.
+La clase avanza de lo más simple a lo más completo. El objetivo no es memorizar la API: es observar qué ocurre cuando un productor, una cola y uno o varios consumidores trabajan a ritmos distintos.
 
 ## Demo 1: una cola
 
@@ -8,22 +8,27 @@ La clase avanza de lo más simple a lo más completo.
 productor -> cola -> consumidor
 ```
 
-Muestra cómo publicar y recibir un mensaje.
+Muestra cómo publicar, recibir y confirmar un mensaje con ACK manual.
 
-## Demo 2: resiliencia y DLQ
+## Actividades centrales
 
-Agrega tres ideas, sin mezclar demasiadas responsabilidades:
+Después de la primera demo, completar:
 
-- Reintentos de conexión.
-- Espera creciente entre intentos: backoff.
-- DLQ para mensajes que no se pueden procesar.
+1. `ACTIVIDADES/actividad-1`: Fair Dispatch y QoS.
+2. `ACTIVIDADES/actividad-2`: Fanout Exchange.
 
-## Actividades
+Cada actividad agrega una sola idea y se puede observar en el panel de RabbitMQ.
 
-Después de entender las demos, completar:
+## Demo 2: cierre guiado — DLQ mínima
 
-- `ACTIVIDADES/actividad-1`: Fair Dispatch y QoS.
-- `ACTIVIDADES/actividad-2`: Fanout Exchange.
-- `ACTIVIDADES/actividad-3`: Dead Letter Queue.
+Muestra una sola idea:
+
+- Separar un mensaje rechazado para que no frene a los demás.
+
+Usarla como cierre guiado: integra ACK, NACK y DLQ sin JSON, reintentos ni código compartido.
+
+## Demo 3: resiliencia — backoff exponencial
+
+Solo muestra reintentos de conexión con esperas de 1, 2 y 4 segundos. No mezcla colas, consumidores ni mensajes: primero se entiende el patrón de backoff y recién después se conversa sobre aplicaciones resilientes.
 
 Cada demo y actividad tiene su propio README con los comandos de ejecución.

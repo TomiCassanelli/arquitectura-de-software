@@ -30,7 +30,10 @@ func main() {
 
 	for number := 1; number <= 10; number++ {
 		body := fmt.Sprintf("pedido-%d", number)
-		err = ch.PublishWithContext(context.Background(), "", queueName, false, false, amqp.Publishing{Body: []byte(body)})
+		err = ch.PublishWithContext(context.Background(), "", queueName, false, false, amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			Body:         []byte(body),
+		})
 		if err != nil {
 			log.Fatal(err)
 		}

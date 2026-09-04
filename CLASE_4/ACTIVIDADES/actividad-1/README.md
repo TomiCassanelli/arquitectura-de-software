@@ -8,7 +8,7 @@ Repartir los mensajes entre dos consumidores sin sobrecargar al consumidor más 
 
 Completá el `TODO` de `consumidor/main.go` para configurar QoS antes de `Consume`.
 
-Ejecutá dos consumidores y un productor. El productor enviará 10 pedidos y terminará solo. Probá primero sin tu cambio y luego con tu cambio.
+Ejecutá un consumidor lento y otro rápido, y luego el productor. El productor enviará 10 pedidos y terminará solo. Probá primero sin tu cambio y luego con tu cambio: sin QoS, el consumidor lento puede quedar con varios mensajes sin confirmar; con QoS=1, el rápido recibe los que el lento todavía no puede confirmar.
 
 ## Pistas
 
@@ -20,10 +20,16 @@ Ejecutá dos consumidores y un productor. El productor enviará 10 pedidos y ter
 
 Desde esta carpeta, abrí tres terminales:
 
-Terminales 1 y 2:
+Terminal 1, consumidor lento:
 
 ```bash
-go run ./consumidor
+CONSUMIDOR=lento DELAY_SEGUNDOS=5 go run ./consumidor
+```
+
+Terminal 2, consumidor rápido:
+
+```bash
+CONSUMIDOR=rapido DELAY_SEGUNDOS=1 go run ./consumidor
 ```
 
 Terminal 3:

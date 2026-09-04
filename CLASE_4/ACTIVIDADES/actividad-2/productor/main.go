@@ -23,15 +23,24 @@ func main() {
 	}
 	defer ch.Close()
 
-	// TODO: declarar un exchange durable de tipo fanout antes de publicar.
-	// Pista: ExchangeDeclare(exchangeName, "fanout", ...)
+	// El productor también declara el exchange para poder ejecutarse por separado.
+	// No es parte del ejercicio: el foco está en los vínculos de cada consumidor.
+	if err := ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil); err != nil {
+		log.Fatal(err)
+	}
 
 	body := []byte(`{"pedido_id":"PED-1","estado":"confirmado"}`)
+	log.Printf("[TIENDA] El pedido fue confirmado: %s", body)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = ch.PublishWithContext(ctx, exchangeName, "", false, false, amqp.Publishing{ContentType: "application/json", Body: body})
+	err = ch.PublishWithContext(ctx, exchangeName, "", false, false, amqp.Publishing{
+		ContentType:  "application/json",
+		DeliveryMode: amqp.Persistent,
+		Body:         body,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Publicado en fanout: %s", body)
+	log.Println("[TIENDA] Evento publicado en el exchange fanout.")
+	log.Println("[OBSERVÁ] Cada cola vinculada recibirá su propia copia del pedido.")
 }

@@ -22,14 +22,24 @@ func main() {
 	}
 	defer ch.Close()
 
-	// TODO: repetir la configuración del exchange y del binding para q.logistica.
+	// El mismo exchange reparte una copia del evento a cada área vinculada.
+	if err := ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil); err != nil {
+		log.Fatal(err)
+	}
+	// Logística necesita otra cola: no comparte mensajes con facturación.
+	if _, err := ch.QueueDeclare(queueName, true, false, false, false, nil); err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: conectar la cola de logística al exchange.
+	// Usá la misma estructura que en facturación, pero con queueName = q.logistica.
 
 	messages, err := ch.Consume(queueName, "", true, false, false, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Logística escuchando...")
+	log.Println("[LOGÍSTICA] Lista. Cuando la cola esté vinculada, preparará cada envío.")
 	for message := range messages {
-		log.Printf("[Logística] Recibido: %s", message.Body)
+		log.Printf("[LOGÍSTICA] Recibí %s. Preparo el envío.", message.Body)
 	}
 }

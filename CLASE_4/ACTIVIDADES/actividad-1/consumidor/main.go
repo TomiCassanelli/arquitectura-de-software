@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	"math/rand"
+	"os"
+	"strconv"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -12,7 +13,17 @@ const amqpURI = "amqp://user:pass@localhost:5672"
 const queueName = "actividad-1-pedidos"
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	// Estas dos variables solo simulan un consumidor lento y otro rápido.
+	// No son parte de RabbitMQ: sirven para que el efecto de QoS sea visible.
+	consumerName := os.Getenv("CONSUMIDOR")
+	if consumerName == "" {
+		consumerName = "sin-nombre"
+	}
+	processingSeconds, err := strconv.Atoi(os.Getenv("DELAY_SEGUNDOS"))
+	if err != nil || processingSeconds < 1 {
+		processingSeconds = 2
+	}
+
 	conn, err := amqp.Dial(amqpURI)
 	if err != nil {
 		log.Fatal(err)
@@ -41,13 +52,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Consumidor listo. CTRL+C para salir.")
+	log.Printf("[%s] Listo. Tarda %ds por pedido. CTRL+C para salir.", consumerName, processingSeconds)
 	for delivery := range messages {
-		// Se simula que cada consumidor puede tardar un tiempo diferente.
-		delay := time.Duration(rand.Intn(5)+1) * time.Second
-		log.Printf("Recibido %s. Procesando durante %v", delivery.Body, delay)
+		delay := time.Duration(processingSeconds) * time.Second
+		log.Printf("[%s] Recibido %s. Procesando durante %v", consumerName, delivery.Body, delay)
 		time.Sleep(delay)
-		delivery.Ack(false)
-		log.Println("ACK enviado")
+		if err := delivery.Ack(false); err != nil {
+			log.Printf("[%s] Error al enviar ACK: %v", consumerName, err)
+			continue
+		}
+		log.Printf("[%s] ACK enviado", consumerName)
 	}
 }
