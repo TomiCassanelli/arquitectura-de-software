@@ -9,14 +9,6 @@ Seguir estos pasos en orden. Los comandos de los pasos 1 a 4 se ejecutan una sol
 
 ## 1. Abrir Docker Desktop
 
-Abrir **Docker Desktop** y esperar a que indique que el motor está iniciado. En una terminal, verificarlo:
-
-```bash
-docker version
-```
-
-El comando debe mostrar una sección `Server`. Si muestra un error de conexión, Docker Desktop todavía no está listo.
-
 ## 2. Levantar Solr
 
 Desde `CLASE_5` ejecutar:
@@ -77,18 +69,9 @@ bash consultas/03_relevancia.sh
 
 ## 6. Resolver la Actividad 2
 
-La Actividad 2 requiere Go 1.22 o superior. Verificarlo con:
-
-```bash
-go version
-```
-
-Luego entrar a la carpeta de la actividad:
-
 ```bash
 cd ACTIVIDADES/actividad-2
 go mod tidy
-go test ./...
 go run .
 ```
 
