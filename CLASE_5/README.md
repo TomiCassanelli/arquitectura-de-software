@@ -42,16 +42,16 @@ curl -fsS -X POST \
   'http://localhost:8983/solr/products/update?commit=true'
 ```
 
-Verificar que se cargaron los cinco productos:
+Verificar que se cargaron los quince productos:
 
 ```bash
 curl -fsS -G 'http://localhost:8983/solr/products/select' \
   --data-urlencode 'q=*:*' \
-  --data-urlencode 'rows=5' \
+  --data-urlencode 'rows=15' \
   --data-urlencode 'wt=json'
 ```
 
-En la respuesta debe aparecer `"numFound":5`.
+En la respuesta debe aparecer `"numFound":15`.
 
 ## 5. Resolver la Actividad 1
 
@@ -59,13 +59,18 @@ En la respuesta debe aparecer `"numFound":5`.
 cd ACTIVIDADES/actividad-1
 ```
 
-Completar los `TODO` de los archivos dentro de `consultas` y ejecutarlos de a uno:
+Construir las seis consultas indicadas en los cuatro archivos dentro de
+`consultas` y ejecutarlos de a uno. La guía explica qué debe resolverse en
+cada archivo y deja un único ejemplo incompleto de la forma del comando:
 
 ```bash
 bash consultas/01_busquedas.sh
 bash consultas/02_filtros_y_campos.sh
 bash consultas/03_relevancia.sh
+bash consultas/04_consultas_adicionales.sh
 ```
+
+Cada estudiante debe usar la variante asignada en el [formulario de la clase](FORMULARIO_GOOGLE/README.md). El dataset es común; las consultas y preguntas de comprobación cambian según la variante.
 
 ## 6. Resolver la Actividad 2
 

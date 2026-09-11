@@ -17,6 +17,8 @@ El endpoint esperado es:
 GET /products/search?q=running&category=calzado&brand=Adidas&limit=5
 ```
 
+Una vez implementado el endpoint, cada estudiante recibe una variante (`V01` a `V10`) en el formulario. Debe transformar la indicación asignada en parámetros HTTP, ejecutar el endpoint y responder el resultado observado. Las variantes están generadas en [`../../FORMULARIO_GOOGLE`](../../FORMULARIO_GOOGLE/README.md).
+
 - `q` es obligatorio.
 - `limit` debe ser entero positivo; por defecto vale `10`.
 - `category` y `brand` son opcionales y se envían a Solr como filtros exactos `fq`.

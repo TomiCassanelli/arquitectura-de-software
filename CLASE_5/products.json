@@ -3,5 +3,15 @@
   {"id":"p2","title":"Zapatillas Nike Urbanas","description":"Calzado cómodo para uso diario","category":"calzado","brand":"Nike","price":115000},
   {"id":"p3","title":"Remera deportiva Running","description":"Remera respirable para entrenamiento y running","category":"indumentaria","brand":"Puma","price":35000},
   {"id":"p4","title":"Zapatillas Asics","description":"Modelo técnico de running para entrenamiento","category":"calzado","brand":"Asics","price":145000},
-  {"id":"p5","title":"Mochila Adidas","description":"Mochila deportiva para gimnasio","category":"accesorios","brand":"Adidas","price":65000}
+  {"id":"p5","title":"Mochila Adidas","description":"Mochila deportiva para gimnasio","category":"accesorios","brand":"Adidas","price":65000},
+  {"id":"p6","title":"Zapatillas Adidas Urbanas","description":"Zapatillas urbanas Adidas para uso diario","category":"calzado","brand":"Adidas","price":130000},
+  {"id":"p7","title":"Zapatillas Nike Running Pro","description":"Zapatillas para running con amortiguación","category":"calzado","brand":"Nike","price":138000},
+  {"id":"p8","title":"Zapatillas Puma Casuales","description":"Zapatillas casuales Puma para todos los días","category":"calzado","brand":"Puma","price":89000},
+  {"id":"p9","title":"Zapatillas New Balance Running","description":"Calzado de running para distancias medias","category":"calzado","brand":"New Balance","price":155000},
+  {"id":"p10","title":"Campera Adidas Running","description":"Campera Adidas para running y entrenamiento","category":"indumentaria","brand":"Adidas","price":98000},
+  {"id":"p11","title":"Short Nike Training","description":"Short Nike para entrenamiento funcional","category":"indumentaria","brand":"Nike","price":42000},
+  {"id":"p12","title":"Mochila Nike Urbana","description":"Mochila urbana Nike para ciudad","category":"accesorios","brand":"Nike","price":72000},
+  {"id":"p13","title":"Botella Puma Training","description":"Botella Puma para entrenamiento","category":"accesorios","brand":"Puma","price":12000},
+  {"id":"p14","title":"Medias Asics Running","description":"Medias técnicas para running","category":"indumentaria","brand":"Asics","price":18000},
+  {"id":"p15","title":"Zapatillas Reebok Classic","description":"Zapatillas clásicas Reebok para uso urbano","category":"calzado","brand":"Reebok","price":105000}
 ]
