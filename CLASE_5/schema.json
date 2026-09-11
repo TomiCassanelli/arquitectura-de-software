@@ -1,0 +1,39 @@
+{
+  "add-field": [
+    {
+      "name": "title",
+      "type": "text_general",
+      "indexed": true,
+      "stored": true,
+      "multiValued": false
+    },
+    {
+      "name": "description",
+      "type": "text_general",
+      "indexed": true,
+      "stored": true,
+      "multiValued": false
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "indexed": true,
+      "stored": true,
+      "multiValued": false
+    },
+    {
+      "name": "brand",
+      "type": "string",
+      "indexed": true,
+      "stored": true,
+      "multiValued": false
+    },
+    {
+      "name": "price",
+      "type": "pdouble",
+      "indexed": true,
+      "stored": true,
+      "multiValued": false
+    }
+  ]
+}

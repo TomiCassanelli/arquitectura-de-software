@@ -1,0 +1,7 @@
+[
+  {"id":"p1","title":"Zapatillas Adidas Running","description":"Calzado liviano para correr largas distancias","category":"calzado","brand":"Adidas","price":120000},
+  {"id":"p2","title":"Zapatillas Nike Urbanas","description":"Calzado cómodo para uso diario","category":"calzado","brand":"Nike","price":115000},
+  {"id":"p3","title":"Remera deportiva Running","description":"Remera respirable para entrenamiento y running","category":"indumentaria","brand":"Puma","price":35000},
+  {"id":"p4","title":"Zapatillas Asics","description":"Modelo técnico de running para entrenamiento","category":"calzado","brand":"Asics","price":145000},
+  {"id":"p5","title":"Mochila Adidas","description":"Mochila deportiva para gimnasio","category":"accesorios","brand":"Adidas","price":65000}
+]

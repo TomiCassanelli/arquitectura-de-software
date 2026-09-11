@@ -1,0 +1,14 @@
+services:
+  solr:
+    image: solr:9
+    ports:
+      - "8983:8983"
+    command:
+      - solr-precreate
+      - products
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8983/solr/products/admin/ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 10s
