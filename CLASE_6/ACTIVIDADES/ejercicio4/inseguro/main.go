@@ -6,21 +6,28 @@ import (
 	"time"
 )
 
-// Simula 50 compras concurrentes del mismo producto, decrementando un
+// VARIANTE: el formulario indicará qué bloque copiar y pegar aquí.
+const (
+	initialStock = XXX
+	totalSales   = XXX
+	saleDelay    = XXX * time.Millisecond
+)
+
+// Simula totalSales compras concurrentes del mismo producto, decrementando un
 // contador de stock compartido SIN ninguna protección. Corré este archivo
 // con -race para ver el reporte de data race:
 //
 //	go run -race main.go
 func main() {
-	stock := 100
+	stock := initialStock
 
 	var wg sync.WaitGroup
-	wg.Add(50)
-	for i := 0; i < 50; i++ {
+	wg.Add(totalSales)
+	for i := 0; i < totalSales; i++ {
 		go func() {
 			defer wg.Done()
-			time.Sleep(time.Millisecond) // simula el tiempo de la "compra"
-			stock--                      // ← data race: 50 goroutines sin sincronizar
+			time.Sleep(saleDelay) // simula el tiempo de la "compra"
+			stock--               // ← data race: compras sin sincronizar
 		}()
 	}
 	wg.Wait()

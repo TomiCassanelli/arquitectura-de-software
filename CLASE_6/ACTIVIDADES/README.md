@@ -40,7 +40,7 @@ for i := 0; i < 1000; i++ {
 fmt.Println(stock) // ¿cuánto vale?
 ```
 
-1000 goroutines modifican `stock` sin sincronización. El resultado es impredecible.
+Las `totalSales` goroutines modifican `stock` sin sincronización. El resultado es impredecible.
 
 **Pasos para reproducir:**
 1. Guardar el código en `race.go` (ya está en `handson1/race.go`).
@@ -81,17 +81,17 @@ Simulá tres funciones que consultan precio, stock y reviews de un producto (cad
 
 ## Ejercicio 2 — Worker Pool: actualización masiva de precios
 
-Tenés una lista de 1000 IDs de productos a los que hay que aplicarles un aumento de precio (simulado con `time.Sleep(50 * time.Millisecond)` por producto). Implementá un worker pool con N workers fijos (probá con 5 y con 20) que toman IDs de un channel de trabajos y devuelven el resultado por un channel de resultados. Usá `sync.WaitGroup` para saber cuándo terminaron todos los workers y cerrar los channels correctamente. Medí el tiempo total con distintos valores de N.
+Usá la lista `productIDs`. Cada producto tarda `processDelay` y el pool debe tener `workerCount` workers fijos. Los valores concretos los asigna el formulario mediante el bloque de variante.
 
 **Objetivo:** entender por qué no conviene lanzar una goroutine por tarea sin control, y cómo el número de workers impacta el throughput.
 
 **Dónde completar:** [ejercicio2/main.go](ejercicio2/main.go), función `procesarConWorkerPool`.
 
-> ⏱ La versión secuencial de este ejercicio tarda ~50 segundos (1000 productos × 50ms). Es intencional: hace evidente la diferencia contra el worker pool.
+> ⏱ Compará el tiempo secuencial con el del worker pool usando los valores de `productIDs`, `processDelay` y `workerCount` de tu variante.
 
 ## Ejercicio 3 — Context: cortar una fuente lenta
 
-Sobre el Ejercicio 1, hacé que la consulta de "reviews" tarde deliberadamente más de lo razonable (por ejemplo 2 segundos). Agregá un `context.WithTimeout` de 300ms a esa consulta específica: si no responde a tiempo, la ficha del producto se devuelve igual, pero sin reviews (o con un valor por defecto), en vez de bloquear toda la respuesta. Usá `select` para elegir entre el resultado del channel y `ctx.Done()`.
+Usá `reviewsDelay`, `timeoutLimit` y `defaultReviews` de tu variante. Si Reviews no responde antes de `timeoutLimit`, devolvé `defaultReviews` en vez de seguir esperando.
 
 **Objetivo:** entender cómo Context evita que una fuente lenta bloquee todo el sistema, y practicar `select` con `ctx.Done()`.
 
@@ -99,7 +99,7 @@ Sobre el Ejercicio 1, hacé que la consulta de "reviews" tarde deliberadamente m
 
 ## Ejercicio 4 — Contador seguro: Mutex vs Channel (bonus)
 
-Escribí un contador de stock compartido que 50 goroutines decrementan al mismo tiempo (simulando 50 compras simultáneas del mismo producto). Primero corré la versión sin protección con `go run -race` y observá el reporte de race condition. Después resolvelo de dos formas distintas: (a) protegiendo el contador con `sync.Mutex`, y (b) reemplazando el contador por una goroutine dueña del estado que recibe pedidos de decremento por un channel. Compará ambas soluciones.
+Usá `initialStock`, `totalSales` y `saleDelay` de tu variante. Primero observá la versión sin protección y después resolvela con Mutex o, como bonus, con una goroutine dueña del estado.
 
 **Objetivo:** ver una race condition real, entender dos estrategias válidas para resolverla (memoria compartida protegida vs. estado que solo cambia por mensajes) y cuándo conviene cada una.
 
@@ -108,4 +108,4 @@ Escribí un contador de stock compartido que 50 goroutines decrementan al mismo 
 - [ejercicio4/mutex/main.go](ejercicio4/mutex/main.go) — completar con `sync.Mutex`.
 - [ejercicio4/channel/main.go](ejercicio4/channel/main.go) — completar con una goroutine dueña del estado + channel.
 
-> El stock arranca en 100 y se decrementa 50 veces, así que el resultado correcto es **50**, no 0.
+> El resultado correcto es `initialStock - totalSales`.
