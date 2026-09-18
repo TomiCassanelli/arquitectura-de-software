@@ -1,8 +1,11 @@
 # Channels
 
-Un **channel** es un camino por el que una goroutine le pasa un dato a otra.
-Por ejemplo, el servicio de delivery puede avisarle a la pantalla que un pedido
-está listo.
+Un **channel** sirve para que una goroutine le pase un dato a otra. Por ejemplo,
+el servicio de delivery sabe que un pedido está listo y necesita avisarle a la
+pantalla.
+
+El channel no hace el trabajo ni crea una goroutine: solamente transporta el
+mensaje entre quien lo envía y quien lo recibe.
 
 ```go
 orderChannel := make(chan string)
@@ -11,9 +14,18 @@ orderChannel := make(chan string)
 Esto crea un channel que transporta textos. Las flechas se leen así:
 
 ```go
-orderChannel <- "Order is ready" // enviar hacia el channel
-order := <-orderChannel           // recibir desde el channel
+orderChannel <- "Order is ready" // poner un mensaje en el channel
+order := <-orderChannel           // sacar un mensaje del channel
 ```
+
+## Sin buffer y con buffer
+
+Un channel sin buffer es como pasar una caja de mano a mano: quien envía espera
+hasta que alguien esté listo para recibir. No deja el mensaje guardado.
+
+Un channel con buffer tiene una pequeña fila. Por ejemplo,
+`make(chan string, 2)` puede guardar hasta dos mensajes. Mientras quede lugar,
+el emisor puede continuar aunque el receptor todavía no haya escuchado.
 
 ## Recorrido
 
@@ -29,9 +41,6 @@ order := <-orderChannel           // recibir desde el channel
   cada pedido. Como no hay buffer, el emisor debe esperar antes de continuar.
 - `main_6.go`: es igual al paso 5; la única diferencia es el buffer para dos
   pedidos, que funciona como una pequeña fila.
-
-Un channel sin buffer no guarda mensajes: quien envía espera a que alguien
-reciba. El buffer sí es una fila con capacidad limitada.
 
 Ejecutar: `go run main_1.go`.
 
