@@ -1,0 +1,30 @@
+services:
+  # Las tres APIs usan el mismo Dockerfile y el mismo código Go.
+  # Solo cambia el nombre que mostrarán en la respuesta.
+  api1:
+    build: .
+    environment:
+      NOMBRE_SERVIDOR: "Servidor A"
+
+  api2:
+    build: .
+    environment:
+      NOMBRE_SERVIDOR: "Servidor B"
+
+  api3:
+    build: .
+    environment:
+      NOMBRE_SERVIDOR: "Servidor C"
+
+  balanceador:
+    image: nginx:alpine
+    ports:
+      # El navegador consulta localhost:8080; NGINX escucha en el 80 interno.
+      - "8080:80"
+    volumes:
+      # Usamos nuestra configuración de NGINX en modo solo lectura.
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
