@@ -35,7 +35,7 @@
       "datasource": { "type": "mysql", "uid": "mysql-logs" },
       "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
       "targets": [
-        { "rawSql": "SELECT created_at AS time, message AS body, level FROM app_logs WHERE $__timeFilter(created_at) ORDER BY created_at DESC LIMIT 100", "rawQuery": true, "format": "table", "refId": "A" }
+        { "rawSql": "SELECT created_at AS time, CONCAT(CASE WHEN track_id = '' THEN '' ELSE CONCAT('[', track_id, '] ') END, message) AS body, level FROM app_logs WHERE $__timeFilter(created_at) ORDER BY created_at DESC, id DESC LIMIT 100", "rawQuery": true, "format": "table", "refId": "A" }
       ]
     }
   ]

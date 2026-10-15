@@ -22,19 +22,17 @@ var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Help: "Duración de las respuestas HTTP en segundos.",
 }, []string{"route", "status"})
 
-// Middleware mide una vez cada petición atendida por un controller.
-func Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Empezamos a medir antes de que responda el controller.
-		start := time.Now()
-		c.Next() // Gin ejecuta el controller y luego vuelve a la línea siguiente.
+// RecordMetrics mide una vez cada petición atendida por un controller.
+func RecordMetrics(c *gin.Context) {
+	// Empezamos a medir antes de que responda el controller.
+	start := time.Now()
+	c.Next() // Gin ejecuta el controller y luego vuelve a la línea siguiente.
 
-		// Al volver, ya conocemos la ruta y el estado de la respuesta.
-		route := c.FullPath()
-		status := strconv.Itoa(c.Writer.Status())
+	// Al volver, ya conocemos la ruta y el estado de la respuesta.
+	route := c.FullPath()
+	status := strconv.Itoa(c.Writer.Status())
 
-		// Inc suma una solicitud; Observe registra cuánto tardó.
-		requests.WithLabelValues(route, status).Inc()
-		duration.WithLabelValues(route, status).Observe(time.Since(start).Seconds())
-	}
+	// Inc suma una solicitud; Observe registra cuánto tardó.
+	requests.WithLabelValues(route, status).Inc()
+	duration.WithLabelValues(route, status).Observe(time.Since(start).Seconds())
 }

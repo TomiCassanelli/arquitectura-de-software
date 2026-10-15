@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"observabilidad-demo/controllers"
-	"observabilidad-demo/logstore"
+	logs "observabilidad-demo/logs"
 	"observabilidad-demo/observability"
 )
 
@@ -19,7 +19,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	// La app comprueba MySQL al arrancar porque los controllers guardan logs allí.
-	logs, err := logstore.Open()
+	logs, err := logs.Open()
 	if err != nil {
 		log.Fatalf("no se pudo conectar a MySQL: %v", err)
 	}
@@ -32,11 +32,16 @@ func main() {
 
 	// Gin ejecuta este middleware antes y después de cada controller del grupo.
 	api := router.Group("/")
-	api.Use(observability.Middleware())
+	api.Use(observability.RecordMetrics)
 	api.GET("/", controllers.Home)
 	api.GET("/ok", demo.OK)
 	api.GET("/slow", demo.Slow)
 	api.GET("/error", demo.Error)
+	// Solo las rutas de compra reciben un track_id; mantienen las métricas del grupo api.
+	compra := api.Group("/compra")
+	compra.Use(observability.AddTrackID)
+	compra.GET("/ok", demo.CompraOK)
+	compra.GET("/error", demo.CompraError)
 
 	// La dirección 0.0.0.0 permite que otros contenedores lleguen a la API.
 	port := os.Getenv("PORT")

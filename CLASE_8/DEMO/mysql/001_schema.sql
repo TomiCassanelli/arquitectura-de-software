@@ -3,9 +3,11 @@
 CREATE TABLE IF NOT EXISTS app_logs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    track_id VARCHAR(32) NOT NULL DEFAULT '',
     level VARCHAR(10) NOT NULL,
     message TEXT NOT NULL,
-    INDEX idx_app_logs_created_at (created_at)
+    INDEX idx_app_logs_created_at (created_at),
+    INDEX idx_app_logs_track_id (track_id)
 );
 
 -- Grafana solo necesita leer los logs. El usuario demo de la app puede escribirlos.

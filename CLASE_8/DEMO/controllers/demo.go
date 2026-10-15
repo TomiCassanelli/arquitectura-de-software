@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	logs "observabilidad-demo/logs"
+
 	"github.com/gin-gonic/gin"
-	"observabilidad-demo/logstore"
 )
 
 // Demo agrupa los controllers que escriben logs en MySQL.
-type Demo struct{ Logs *logstore.Store }
+type Demo struct{ Logs *logs.Store }
 
 // Health permite comprobar que el proceso responde; también sirve al healthcheck de Compose.
 func Health(c *gin.Context) {
@@ -18,7 +19,7 @@ func Health(c *gin.Context) {
 
 // Home enumera las rutas para que la demo se pueda explorar desde el navegador.
 func Home(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"mensaje": "Demo de observabilidad", "rutas": []string{"/ok", "/slow", "/error", "/metrics", "/health"}})
+	c.JSON(http.StatusOK, gin.H{"mensaje": "Demo de observabilidad", "rutas": []string{"/ok", "/slow", "/error", "/compra/ok", "/compra/error", "/metrics", "/health"}})
 }
 
 // OK simula una operación exitosa y produce un log de aplicación.
