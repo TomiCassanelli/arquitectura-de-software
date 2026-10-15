@@ -1,0 +1,11 @@
+# Prometheus consulta el endpoint /metrics de la aplicación cada cinco segundos.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  # Este nombre aparece como etiqueta job en las consultas.
+  - job_name: demo-app
+    # Compose resuelve app como la dirección del contenedor de la API.
+    static_configs:
+      - targets: ["app:8080"]
+    metrics_path: /metrics

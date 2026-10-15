@@ -1,0 +1,7 @@
+# Estos archivos no forman parte del código que necesita el compilador.
+.git
+README.md
+compose.yaml
+prometheus.yml
+alloy.config
+grafana/

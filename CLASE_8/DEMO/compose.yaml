@@ -1,0 +1,74 @@
+# Una sola orden, `docker compose up --build`, inicia toda la presentación.
+# Un nombre propio evita mezclar estos contenedores con CLASE_7/DEMO.
+name: clase8-observabilidad
+
+services:
+  app:
+    # El Dockerfile compila main.go y crea la imagen de la API.
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+    # Docker guarda stdout/stderr; Alloy leerá esos logs desde el daemon.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  prometheus:
+    # Prometheus consulta /metrics de la app cada cinco segundos.
+    image: prom/prometheus:v3.7.3
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+
+  loki:
+    # Loki guarda los logs que Alloy envía; su configuración local viene en la imagen.
+    image: grafana/loki:3.7.0
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+
+  alloy:
+    # Alloy descubre contenedores por el socket de Docker y envía sus logs a Loki.
+    image: grafana/alloy:latest
+    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+    volumes:
+      - ./alloy.config:/etc/alloy/config.alloy:ro
+      # El socket da acceso amplio al daemon: usar solo en esta demo local.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "12345:12345"
+    depends_on:
+      - loki
+
+  grafana:
+    # Grafana es la interfaz web; los datasources y el dashboard se cargan solos.
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+
+# Los volúmenes conservan los datos al reiniciar los contenedores.
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:

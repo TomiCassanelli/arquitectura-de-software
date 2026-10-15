@@ -1,0 +1,42 @@
+{
+  "uid": "observabilidad-demo",
+  "title": "Demo de observabilidad",
+  "tags": ["clase-8", "demo"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Solicitudes por segundo, por ruta y estado",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum by (route, status) (rate(demo_http_requests_total{job=\"demo-app\"}[1m]))", "legendFormat": "{{route}} HTTP {{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Duración media por ruta, en segundos",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sum by (route) (rate(demo_http_request_duration_seconds_sum{job=\"demo-app\"}[1m])) / sum by (route) (rate(demo_http_request_duration_seconds_count{job=\"demo-app\"}[1m]))", "legendFormat": "{{route}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Logs de la aplicación",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "{service=\"app\"}", "refId": "A" }
+      ]
+    }
+  ]
+}

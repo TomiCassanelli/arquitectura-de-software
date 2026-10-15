@@ -1,0 +1,8 @@
+# Grafana lee los JSON de esta carpeta y crea el dashboard de ejemplo.
+apiVersion: 1
+providers:
+  - name: Demo
+    type: file
+    folder: Presentación
+    options:
+      path: /var/lib/grafana/dashboards
