@@ -9,16 +9,16 @@ import (
 )
 
 // AddTrackID asigna un ID distinto a cada petición del grupo /compra.
-func AddTrackID(c *gin.Context) {
+func AddTrackID(ctx *gin.Context) {
 	// 16 bytes aleatorios se muestran como 32 caracteres hexadecimales.
-	var bytes [16]byte
-	if _, err := rand.Read(bytes[:]); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "no se pudo crear el track_id"})
+	var randomBytes [16]byte
+	if _, err := rand.Read(randomBytes[:]); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "no se pudo crear el track_id"})
 		return
 	}
-	id := hex.EncodeToString(bytes[:])
+	trackID := hex.EncodeToString(randomBytes[:])
 	// El controller lo lee con GetString; el cliente lo recibe en el header.
-	c.Set("track_id", id)
-	c.Header("X-Track-ID", id)
-	c.Next()
+	ctx.Set("track_id", trackID)
+	ctx.Header("X-Track-ID", trackID)
+	ctx.Next()
 }

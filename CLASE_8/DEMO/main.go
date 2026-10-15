@@ -3,13 +3,12 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"observabilidad-demo/controllers"
-	logs "observabilidad-demo/logs"
+	"observabilidad-demo/logs"
 	"observabilidad-demo/observability"
 )
 
@@ -19,11 +18,11 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	// La app comprueba MySQL al arrancar porque los controllers guardan logs allí.
-	logs, err := logs.Open()
+	logStore, err := logs.Connect()
 	if err != nil {
 		log.Fatalf("no se pudo conectar a MySQL: %v", err)
 	}
-	demo := &controllers.Demo{Logs: logs}
+	controller := &controllers.DemoController{Logs: logStore}
 	// Recovery convierte un panic en HTTP 500 para que el proceso siga vivo.
 	router.Use(gin.Recovery())
 	// Estas dos rutas quedan fuera del grupo medido para no contar las sondas.
@@ -31,24 +30,25 @@ func main() {
 	router.GET("/health", controllers.Health)
 
 	// Gin ejecuta este middleware antes y después de cada controller del grupo.
-	api := router.Group("/")
-	api.Use(observability.RecordMetrics)
-	api.GET("/", controllers.Home)
-	api.GET("/ok", demo.OK)
-	api.GET("/slow", demo.Slow)
-	api.GET("/error", demo.Error)
-	// Solo las rutas de compra reciben un track_id; mantienen las métricas del grupo api.
-	compra := api.Group("/compra")
-	compra.Use(observability.AddTrackID)
-	compra.GET("/ok", demo.CompraOK)
-	compra.GET("/error", demo.CompraError)
+	apiRoutes := router.Group("/")
+	apiRoutes.Use(observability.RecordMetrics)
+	apiRoutes.GET("/", controllers.Home)
+	apiRoutes.GET("/ok", controller.OperacionExitosa)
+	apiRoutes.GET("/slow", controller.OperacionLenta)
+	apiRoutes.GET("/error", controller.OperacionFallida)
+	// Solo las rutas de compra reciben un track_id; también registran las métricas del grupo apiRoutes.
+	compraRoutes := apiRoutes.Group("/compra")
+	compraRoutes.Use(observability.AddTrackID)
+	compraRoutes.GET("/ok", controller.CompraExitosa)
+	compraRoutes.GET("/error", controller.CompraErrorPagos)
+	compraRoutes.GET("/error-pedidos", controller.CompraErrorPedidos)
 
 	// La dirección 0.0.0.0 permite que otros contenedores lleguen a la API.
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("app lista en :%s a las %s", port, time.Now().Format(time.RFC3339))
+	log.Printf("app lista en :%s", port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}

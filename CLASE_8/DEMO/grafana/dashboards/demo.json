@@ -4,9 +4,22 @@
   "tags": ["clase-8", "demo"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 6,
   "refresh": "5s",
   "time": { "from": "now-15m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "track_id",
+        "label": "Track ID (filtra logs)",
+        "description": "Pegá el track_id de /compra. Vacío muestra todos los logs de la API.",
+        "type": "textbox",
+        "query": "",
+        "current": { "text": "", "value": "" },
+        "hide": 0
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
@@ -30,13 +43,63 @@
     },
     {
       "id": 3,
-      "title": "Logs de la aplicación",
+      "title": "Logs del recorrido simulado",
       "type": "logs",
       "datasource": { "type": "mysql", "uid": "mysql-logs" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "targets": [
-        { "rawSql": "SELECT created_at AS time, CONCAT(CASE WHEN track_id = '' THEN '' ELSE CONCAT('[', track_id, '] ') END, message) AS body, level FROM app_logs WHERE $__timeFilter(created_at) ORDER BY created_at DESC, id DESC LIMIT 100", "rawQuery": true, "format": "table", "refId": "A" }
+        { "rawSql": "SELECT created_at AS time, CONCAT('[', stage, '] ', CASE WHEN track_id = '' THEN '' ELSE CONCAT('[', track_id, '] ') END, message) AS body, level FROM app_logs WHERE $__timeFilter(created_at) AND (${track_id:sqlstring} = '' OR track_id = ${track_id:sqlstring}) ORDER BY created_at DESC, id DESC LIMIT 100", "rawQuery": true, "format": "table", "refId": "A" }
       ]
+    },
+    {
+      "id": 4,
+      "title": "Porcentaje de fallos HTTP 5xx",
+      "description": "Compara respuestas 5xx con el resto durante el rango de tiempo seleccionado. El porcentaje lo calcula Grafana a partir de ambos valores.",
+      "type": "piechart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(increase(requests_total{job=\"demo-app\",status=~\"5..\"}[$__range])) or vector(0)", "legendFormat": "Fallos HTTP 5xx", "refId": "A", "instant": true, "range": false },
+        { "expr": "sum(increase(requests_total{job=\"demo-app\",status!~\"5..\"}[$__range])) or vector(0)", "legendFormat": "Otras respuestas", "refId": "B", "instant": true, "range": false }
+      ],
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "values": ["percent"] },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "title": "Fallo por etapa simulada",
+      "description": "La compra ocurre en una sola API. Esta tabla muestra qué etapa simulada registró el error.",
+      "type": "table",
+      "datasource": { "type": "mysql", "uid": "mysql-logs" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "rawSql": "SELECT created_at AS time, stage AS etapa_simulada, track_id, message AS error FROM app_logs WHERE $__timeFilter(created_at) AND level = 'error' AND (${track_id:sqlstring} = '' OR track_id = ${track_id:sqlstring}) ORDER BY created_at DESC, id DESC LIMIT 100", "rawQuery": true, "format": "table", "refId": "A" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Fallos por etapa en el período",
+      "description": "Cuenta las respuestas HTTP 500 de cada ruta de error durante el rango de tiempo seleccionado. Pedidos y Pagos son etapas simuladas dentro de una sola API.",
+      "type": "bargauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(increase(requests_total{job=\"demo-app\",route=\"/compra/error-pedidos\",status=\"500\"}[$__range])) or vector(0)", "legendFormat": "Pedidos", "refId": "A", "instant": true, "range": false },
+        { "expr": "sum(increase(requests_total{job=\"demo-app\",route=\"/compra/error\",status=\"500\"}[$__range])) or vector(0)", "legendFormat": "Pagos", "refId": "B", "instant": true, "range": false }
+      ],
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true
+      },
+      "fieldConfig": { "defaults": { "min": 0, "decimals": 0 }, "overrides": [] }
     }
   ]
 }

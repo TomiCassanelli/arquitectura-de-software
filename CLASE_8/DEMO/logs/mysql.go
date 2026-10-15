@@ -1,4 +1,4 @@
-package logstore
+package logs
 
 import (
 	"log"
@@ -12,6 +12,7 @@ import (
 // MySQL completa id y created_at automáticamente.
 type Log struct {
 	TrackID string `gorm:"size:32;not null;default:'';index:idx_app_logs_track_id"`
+	Stage   string `gorm:"size:20;not null;default:'api';index:idx_app_logs_stage"`
 	Level   string `gorm:"size:10;not null"`
 	Message string `gorm:"type:text;not null"`
 }
@@ -19,8 +20,8 @@ type Log struct {
 // Store guarda los logs usando GORM.
 type Store struct{ db *gorm.DB }
 
-// Open conecta GORM a MySQL. En Docker, MYSQL_DSN apunta al servicio mysql.
-func Open() (*Store, error) {
+// Connect conecta GORM a MySQL. En Docker, MYSQL_DSN apunta al servicio mysql.
+func Connect() (*Store, error) {
 	dsn := os.Getenv("MYSQL_DSN")
 	if dsn == "" {
 		dsn = "demo:demo@tcp(localhost:3306)/observabilidad?parseTime=true"
@@ -29,21 +30,16 @@ func Open() (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Agrega track_id a una tabla ya existente sin borrar los logs anteriores.
+	// Agrega stage a una tabla ya existente sin borrar los logs anteriores.
 	if err := db.Table("app_logs").AutoMigrate(&Log{}); err != nil {
 		return nil, err
 	}
 	return &Store{db: db}, nil
 }
 
-// Write guarda un log. Table indica el nombre de la tabla que lee Grafana.
-func (s *Store) Write(level, message string) {
-	s.WriteTrack("", level, message)
-}
-
-// WriteTrack guarda un paso del recorrido con el ID recibido en la petición.
-func (s *Store) WriteTrack(trackID, level, message string) {
-	err := s.db.Table("app_logs").Create(&Log{TrackID: trackID, Level: level, Message: message}).Error
+// Write guarda un log en la tabla que lee Grafana, con el track_id y la etapa cuando corresponda.
+func (store *Store) Write(trackID, stage, level, message string) {
+	err := store.db.Table("app_logs").Create(&Log{TrackID: trackID, Stage: stage, Level: level, Message: message}).Error
 	if err != nil {
 		log.Printf("no se pudo guardar el log en MySQL: %v", err)
 	}

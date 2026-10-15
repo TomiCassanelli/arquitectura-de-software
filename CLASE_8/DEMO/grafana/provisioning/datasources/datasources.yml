@@ -1,9 +1,5 @@
 # Grafana crea automáticamente las fuentes de métricas y logs al iniciar.
 apiVersion: 1
-# Esta entrada retira la fuente anterior si el volumen de Grafana ya existía.
-deleteDatasources:
-  - name: Loki
-    orgId: 1
 datasources:
   - name: Prometheus
     uid: prometheus

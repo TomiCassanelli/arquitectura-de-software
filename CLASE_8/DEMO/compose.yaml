@@ -34,7 +34,7 @@ services:
       - app
 
   mysql:
-    # MySQL reemplaza a Alloy y Loki: cada log de la app es una fila.
+    # Cada log de la app se guarda como una fila en MySQL.
     image: mysql:8.4
     environment:
       # Credenciales simples exclusivamente para esta demo local.
