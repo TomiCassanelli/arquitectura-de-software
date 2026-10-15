@@ -18,7 +18,7 @@ var requests = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // HistogramVec guarda las duraciones; Prometheus genera _bucket, _sum y _count.
 var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "demo_http_request_duration_seconds",
+	Name: "request_duration_seconds",
 	Help: "Duración de las respuestas HTTP en segundos.",
 }, []string{"route", "status"})
 

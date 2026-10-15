@@ -1,5 +1,9 @@
-# Grafana crea automáticamente las dos fuentes de datos al iniciar.
+# Grafana crea automáticamente las fuentes de métricas y logs al iniciar.
 apiVersion: 1
+# Esta entrada retira la fuente anterior si el volumen de Grafana ya existía.
+deleteDatasources:
+  - name: Loki
+    orgId: 1
 datasources:
   - name: Prometheus
     uid: prometheus
@@ -7,8 +11,13 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
-  - name: Loki
-    uid: loki
-    type: loki
+  - name: MySQL Logs
+    uid: mysql-logs
+    type: mysql
     access: proxy
-    url: http://loki:3100
+    url: mysql:3306
+    user: grafana_reader
+    jsonData:
+      database: observabilidad
+    secureJsonData:
+      password: ${GRAFANA_MYSQL_PASSWORD}

@@ -3,5 +3,5 @@
 README.md
 compose.yaml
 prometheus.yml
-alloy.config
+mysql/
 grafana/

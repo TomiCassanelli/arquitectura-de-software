@@ -15,7 +15,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
-        { "expr": "sum by (route, status) (rate(demo_http_requests_total{job=\"demo-app\"}[1m]))", "legendFormat": "{{route}} HTTP {{status}}", "refId": "A" }
+        { "expr": "sum by (route, status) (rate(requests_total{job=\"demo-app\"}[1m]))", "legendFormat": "{{route}} HTTP {{status}}", "refId": "A" }
       ]
     },
     {
@@ -25,17 +25,17 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
-        { "expr": "sum by (route) (rate(demo_http_request_duration_seconds_sum{job=\"demo-app\"}[1m])) / sum by (route) (rate(demo_http_request_duration_seconds_count{job=\"demo-app\"}[1m]))", "legendFormat": "{{route}}", "refId": "A" }
+        { "expr": "sum by (route) (rate(request_duration_seconds_sum{job=\"demo-app\"}[1m])) / sum by (route) (rate(request_duration_seconds_count{job=\"demo-app\"}[1m]))", "legendFormat": "{{route}}", "refId": "A" }
       ]
     },
     {
       "id": 3,
       "title": "Logs de la aplicación",
       "type": "logs",
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "mysql", "uid": "mysql-logs" },
       "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
       "targets": [
-        { "expr": "{service=\"app\"}", "refId": "A" }
+        { "rawSql": "SELECT created_at AS time, message AS body, level FROM app_logs WHERE $__timeFilter(created_at) ORDER BY created_at DESC LIMIT 100", "rawQuery": true, "format": "table", "refId": "A" }
       ]
     }
   ]

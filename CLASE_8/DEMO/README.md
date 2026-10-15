@@ -1,6 +1,6 @@
 # Demo: observabilidad local con Prometheus
 
-Esta demo arranca una API Go y cuatro herramientas con **un solo archivo de orquestación**, `compose.yaml`. `main.go` es el único punto de entrada de la API; los paquetes `controllers` y `observability` separan las responsabilidades del código. La librería oficial de Prometheus para Go cuenta las solicitudes y mide su duración; Prometheus consulta esos valores en `/metrics`. Los archivos de configuración contienen comentarios junto a cada decisión. El dashboard es JSON, que no admite comentarios, y se explica aquí. El proyecto Compose se llama `clase8-observabilidad` para no cruzarse con las demos de otras clases.
+Esta demo arranca una API Go, Prometheus, MySQL y Grafana con **un solo archivo de orquestación**, `compose.yaml`. `main.go` es el único punto de entrada de la API; los paquetes `controllers`, `observability` y `logstore` separan las responsabilidades. Prometheus guarda métricas y MySQL guarda los logs en una tabla. Los archivos de configuración contienen comentarios junto a cada decisión. El dashboard es JSON, que no admite comentarios, y se explica aquí. El proyecto Compose se llama `clase8-observabilidad` para no cruzarse con las demos de otras clases.
 
 ## Iniciar
 
@@ -17,8 +17,7 @@ La primera ejecución descarga imágenes y compila Go. Necesitás Docker Desktop
 | API | http://localhost:8080 | Genera respuestas y logs. |
 | Prometheus | http://localhost:9090/targets | Comprueba si la app entrega métricas. |
 | Grafana | http://localhost:3000 | Muestra métricas y logs. Usuario y clave: `admin` / `admin`. |
-| Loki | http://localhost:3100/ready | Confirma que el depósito de logs está listo. |
-| Alloy | http://localhost:12345 | Muestra el estado de la recolección de logs. |
+| MySQL | Dentro de Compose: `mysql:3306` | Guarda una fila por cada evento de la app. |
 
 Grafana crea automáticamente las fuentes de datos y el dashboard **Presentación / Demo de observabilidad**. La clave simple sirve exclusivamente para esta demo local.
 
@@ -33,25 +32,38 @@ curl http://localhost:8080/error
 curl http://localhost:8080/metrics
 ```
 
-`/ok` devuelve 200, `/slow` tarda unos 750 ms y `/error` devuelve 500. `/metrics` muestra el texto que consulta Prometheus cada cinco segundos. El dashboard también actualiza cada cinco segundos. Para generar más datos, repetí esos tres `curl`. En Prometheus, el target `demo-app` debe figurar como **UP** y la consulta `demo_http_requests_total{job="demo-app"}` muestra el contador. En Grafana Explore, elegí **Loki** y consultá `{service="app"}` para ver los mensajes. También podés verlos directamente con `docker compose logs -f app`.
+`/ok` devuelve 200, `/slow` tarda unos 750 ms y `/error` devuelve 500. `/metrics` muestra el texto que consulta Prometheus cada cinco segundos. El dashboard también actualiza cada cinco segundos. Para generar más datos, repetí esos tres `curl`. En Prometheus, el target `demo-app` debe figurar como **UP** y la consulta `requests_total{job="demo-app"}` muestra el contador. En Grafana, el panel **Logs de la aplicación** lee la tabla de MySQL. También podés abrir Explore, elegir **MySQL Logs**, seleccionar formato **Table** y consultar:
+
+```sql
+SELECT created_at AS time, message AS body, level
+FROM app_logs
+WHERE $__timeFilter(created_at)
+ORDER BY created_at DESC;
+```
+
+Para comprobar la tabla directamente sin instalar un cliente MySQL en tu equipo:
+
+```sh
+docker compose exec mysql mysql -u demo -pdemo observabilidad -e "SELECT * FROM app_logs ORDER BY id DESC LIMIT 10;"
+```
 
 ## Cómo viajan los datos
 
 ```text
 GET /ok, /slow, /error → API → contador e histograma → /metrics → Prometheus → Grafana
-                           └→ stdout → Alloy → Loki → Grafana
+                           └→ INSERT en app_logs → MySQL → Grafana
 ```
 
 - La API crea un contador y un histograma en `observability/metrics.go`. `requests.WithLabelValues(route, status).Inc()` suma una solicitud; `duration.WithLabelValues(route, status).Observe(...)` registra cuánto tardó. Las etiquetas permiten separar rutas y estados HTTP.
 - `main.go` registra el middleware solo en el grupo `api`, que contiene `/`, `/ok`, `/slow` y `/error`. Gin lo ejecuta al entrar en esas rutas. En `metrics.go`, `c.Next()` ejecuta el controller y después vuelve al middleware para contar la respuesta y medir cuánto tardó. `/health` y `/metrics` quedan fuera de ese grupo, así que no contaminan el contador. `promhttp.Handler()` sirve `/metrics` en el formato que Prometheus entiende.
 - `prometheus.yml` indica que Prometheus debe consultar `app:8080/metrics`. `app` es un nombre de servicio dentro de Compose, no `localhost` del contenedor de Prometheus.
-- `alloy.config` descubre contenedores por el socket de Docker, conserva solo el servicio `app` y envía sus logs a Loki con la etiqueta `service="app"`.
-- `grafana/provisioning/datasources/datasources.yml` crea los accesos a Prometheus y Loki. `grafana/provisioning/dashboards/dashboards.yml` carga `grafana/dashboards/demo.json`, que dibuja solicitudes por segundo, duración media y logs.
-- Los volúmenes de Compose conservan métricas, logs y configuración de Grafana entre reinicios.
+- `logstore/mysql.go` conecta la app con MySQL y hace un `INSERT` por mensaje. `controllers/demo.go` registra los eventos `info`, `warn` y `error`. `mysql/001_schema.sql` crea la tabla `app_logs` y un usuario de solo lectura para Grafana. Ese SQL se ejecuta únicamente cuando se crea un volumen MySQL nuevo.
+- `grafana/provisioning/datasources/datasources.yml` crea los accesos a Prometheus y MySQL. `grafana/provisioning/dashboards/dashboards.yml` carga `grafana/dashboards/demo.json`, que dibuja solicitudes por segundo, duración media y los mensajes consultados con SQL.
+- Los volúmenes de Compose conservan métricas, filas de MySQL y configuración de Grafana entre reinicios.
 
-La app continúa usando logs en stdout para que Alloy los envíe a Loki. Prometheus almacena las métricas y Grafana las muestra. Esta configuración es una demostración local.
+Las credenciales `demo`, `grafana_demo` y `admin` son solo para esta demo local. Grafana puede leer la tabla, pero no escribirla. Como la app guarda mensajes directamente en MySQL, si la base de datos falla el evento no queda en la tabla; en ese caso la app escribe un aviso en `docker compose logs app`.
 
-El socket de Docker concede acceso amplio al daemon incluso montado como solo lectura. Esta configuración es para una máquina de aprendizaje; antes de usarla en un entorno compartido hay que revisar ese acceso. El colector de logs solo muestra los logs de la aplicación, no los demás contenedores.
+Si venías de la versión con Alloy y Loki, `docker compose up --build -d --remove-orphans` retira sus contenedores antiguos. Sus volúmenes anteriores no se borran automáticamente.
 
 ## Detener y limpiar
 

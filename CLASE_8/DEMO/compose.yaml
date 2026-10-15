@@ -10,7 +10,11 @@ services:
       - "8080:8080"
     environment:
       PORT: "8080"
-    # Docker guarda stdout/stderr; Alloy leerá esos logs desde el daemon.
+      # La app usa este usuario para insertar eventos en la tabla app_logs.
+      MYSQL_DSN: demo:demo@tcp(mysql:3306)/observabilidad?parseTime=true
+    depends_on:
+      mysql:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
       interval: 10s
@@ -29,27 +33,26 @@ services:
     depends_on:
       - app
 
-  loki:
-    # Loki guarda los logs que Alloy envía; su configuración local viene en la imagen.
-    image: grafana/loki:3.7.0
-    command: ["-config.file=/etc/loki/local-config.yaml"]
+  mysql:
+    # MySQL reemplaza a Alloy y Loki: cada log de la app es una fila.
+    image: mysql:8.4
+    environment:
+      # Credenciales simples exclusivamente para esta demo local.
+      MYSQL_ROOT_PASSWORD: root_demo
+      MYSQL_DATABASE: observabilidad
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: demo
     volumes:
-      - loki_data:/loki
-    ports:
-      - "3100:3100"
-
-  alloy:
-    # Alloy descubre contenedores por el socket de Docker y envía sus logs a Loki.
-    image: grafana/alloy:latest
-    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
-    volumes:
-      - ./alloy.config:/etc/alloy/config.alloy:ro
-      # El socket da acceso amplio al daemon: usar solo en esta demo local.
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    ports:
-      - "12345:12345"
-    depends_on:
-      - loki
+      - mysql_data:/var/lib/mysql
+      # El SQL crea la tabla y un usuario que solo puede leer para Grafana.
+      - ./mysql/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      # El servicio está listo cuando el usuario puede consultar la tabla.
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -u demo -pdemo observabilidad -e 'SELECT 1 FROM app_logs LIMIT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 60s
 
   grafana:
     # Grafana es la interfaz web; los datasources y el dashboard se cargan solos.
@@ -57,6 +60,8 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+      # Grafana usa el usuario de solo lectura creado en 001_schema.sql.
+      GRAFANA_MYSQL_PASSWORD: grafana_demo
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -64,11 +69,13 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - prometheus
-      - loki
+      prometheus:
+        condition: service_started
+      mysql:
+        condition: service_healthy
 
 # Los volúmenes conservan los datos al reiniciar los contenedores.
 volumes:
   prometheus_data:
-  loki_data:
+  mysql_data:
   grafana_data:
