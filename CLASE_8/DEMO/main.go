@@ -23,7 +23,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("no se pudo conectar a MySQL: %v", err)
 	}
-	defer logs.Close()
 	demo := &controllers.Demo{Logs: logs}
 	// Recovery convierte un panic en HTTP 500 para que el proceso siga vivo.
 	router.Use(gin.Recovery())

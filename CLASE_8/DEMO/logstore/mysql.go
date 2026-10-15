@@ -1,49 +1,40 @@
 package logstore
 
 import (
-	"context"
-	"database/sql"
 	"log"
 	"os"
-	"time"
 
-	// El driver registra el nombre "mysql" que usa database/sql.
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-// Store guarda los mensajes de la app en la tabla app_logs.
-type Store struct{ db *sql.DB }
+// Log contiene los dos datos que la app guarda por cada evento.
+// MySQL completa id y created_at automáticamente.
+type Log struct {
+	Level   string
+	Message string
+}
 
-// Open usa la dirección interna de Compose y comprueba que MySQL responda.
+// Store guarda los logs usando GORM.
+type Store struct{ db *gorm.DB }
+
+// Open conecta GORM a MySQL. En Docker, MYSQL_DSN apunta al servicio mysql.
 func Open() (*Store, error) {
 	dsn := os.Getenv("MYSQL_DSN")
 	if dsn == "" {
 		dsn = "demo:demo@tcp(localhost:3306)/observabilidad?parseTime=true"
 	}
-	db, err := sql.Open("mysql", dsn)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
 		return nil, err
 	}
 	return &Store{db: db}, nil
 }
 
-// Write inserta un mensaje con nivel info, warn o error.
-// El tiempo límite evita que un problema de MySQL deje la petición esperando indefinidamente.
-func (s *Store) Write(ctx context.Context, level, message string) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	// La tabla completa created_at automáticamente al insertar la fila.
-	_, err := s.db.ExecContext(ctx, "INSERT INTO app_logs (level, message) VALUES (?, ?)", level, message)
+// Write guarda un log. Table indica el nombre de la tabla que lee Grafana.
+func (s *Store) Write(level, message string) {
+	err := s.db.Table("app_logs").Create(&Log{Level: level, Message: message}).Error
 	if err != nil {
-		log.Printf("no se pudo guardar el log en MySQL: %v; nivel=%s mensaje=%s", err, level, message)
+		log.Printf("no se pudo guardar el log en MySQL: %v", err)
 	}
 }
-
-// Close libera las conexiones a MySQL al terminar la aplicación.
-func (s *Store) Close() error { return s.db.Close() }
